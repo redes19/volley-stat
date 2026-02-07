@@ -3,136 +3,26 @@ import './StatEntry.css';
 
 function StatEntry({ players, numSets, stats, setScores, onStatUpdate, onSetScoreUpdate, onViewSummary }) {
     const [currentSet, setCurrentSet] = useState(1);
-    const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
 
-    const currentPlayer = players[currentPlayerIndex];
-
-    // Define categories based on player role
-    const getCategoriesForRole = (role) => {
-        const baseCategories = {
-            service: {
-                label: 'Service',
-                icon: '🏐',
-                items: [
-                    { key: 'ace', label: 'Ace' },
-                    { key: 'difficult', label: 'Mis en difficulté' },
-                    { key: 'passed', label: 'Passé' },
-                    { key: 'missed', label: 'Raté' }
-                ]
-            },
-            pass: {
-                label: 'Passe',
-                icon: '🤝',
-                items: [
-                    { key: 'good', label: 'Bonne' },
-                    { key: 'medium', label: 'Moyen' },
-                    { key: 'bad', label: 'Mauvaise' }
-                ]
-            },
-            faults: {
-                label: 'Fautes',
-                icon: '⚠️',
-                items: [
-                    { key: 'direct', label: 'Faute directe' }
-                ]
-            }
-        };
-
-        // Role-specific categories
-        if (role === 'passeur') {
-            // Passeur: Service, Passe, Fautes (pas d'attaque ni réception)
-            return {
-                service: baseCategories.service,
-                pass: baseCategories.pass,
-                faults: baseCategories.faults
-            };
-        } else if (role === 'libero') {
-            // Libéro: Réception, Défense, Passe, Fautes (pas de service ni attaque)
-            return {
-                reception: {
-                    label: 'Réception',
-                    icon: '🛡️',
-                    items: [
-                        { key: 'setter', label: 'Zone passeur' },
-                        { key: 'threeMeter', label: '3 mètres' },
-                        { key: 'bad', label: 'Mauvais' }
-                    ]
-                },
-                defense: {
-                    label: 'Défense',
-                    icon: '🔰',
-                    items: [
-                        { key: 'good', label: 'Bonne' },
-                        { key: 'medium', label: 'Moyen' },
-                        { key: 'bad', label: 'Mauvaise' }
-                    ]
-                },
-                pass: baseCategories.pass,
-                faults: baseCategories.faults
-            };
-        } else if (role === 'central') {
-            // Central: Service, Attaque, Passe, Fautes (pas de réception ni défense)
-            return {
-                service: baseCategories.service,
-                attack: {
-                    label: 'Attaque',
-                    icon: '⚡',
-                    items: [
-                        { key: 'scored', label: 'Marqué' },
-                        { key: 'placed', label: 'Placé' },
-                        { key: 'missed', label: 'Raté' }
-                    ]
-                },
-                pass: baseCategories.pass,
-                faults: baseCategories.faults
-            };
-        } else {
-            // R4, Pointu: Toutes les catégories
-            return {
-                service: baseCategories.service,
-                attack: {
-                    label: 'Attaque',
-                    icon: '⚡',
-                    items: [
-                        { key: 'scored', label: 'Marqué' },
-                        { key: 'placed', label: 'Placé' },
-                        { key: 'missed', label: 'Raté' }
-                    ]
-                },
-                pass: baseCategories.pass,
-                reception: {
-                    label: 'Réception',
-                    icon: '🛡️',
-                    items: [
-                        { key: 'setter', label: 'Zone passeur' },
-                        { key: 'threeMeter', label: '3 mètres' },
-                        { key: 'bad', label: 'Mauvais' }
-                    ]
-                },
-                defense: {
-                    label: 'Défense',
-                    icon: '🔰',
-                    items: [
-                        { key: 'good', label: 'Bonne' },
-                        { key: 'medium', label: 'Moyen' },
-                        { key: 'bad', label: 'Mauvaise' }
-                    ]
-                },
-                faults: baseCategories.faults
-            };
-        }
+    // Define logic to check if a category applies to a role
+    const isCategoryApplicable = (role, category) => {
+        if (category === 'service') return role !== 'libero'; // Libéro ne sert pas
+        if (category === 'attack') return role !== 'passeur' && role !== 'libero'; // Passeur et Libéro n'attaquent pas
+        if (category === 'reception') return role !== 'passeur' && role !== 'central'; // Passeur et Central ne réceptionnent pas
+        if (category === 'defense') return role !== 'central'; // Central ne défend pas
+        if (category === 'pass') return true; // Tout le monde peut passer
+        if (category === 'faults') return true; // Tout le monde peut faire des fautes
+        return true;
     };
 
-    const categories = getCategoriesForRole(currentPlayer.role);
-
-    const getCurrentValue = (category, subcategory) => {
-        return stats[currentPlayer.name]?.[currentSet]?.[category]?.[subcategory] || 0;
+    const getStatValue = (playerName, category, subcategory) => {
+        return stats[playerName]?.[currentSet]?.[category]?.[subcategory] || 0;
     };
 
-    const updateStat = (category, subcategory, delta) => {
-        const currentValue = getCurrentValue(category, subcategory);
+    const updateStat = (playerName, category, subcategory, delta) => {
+        const currentValue = getStatValue(playerName, category, subcategory);
         const newValue = Math.max(0, currentValue + delta);
-        onStatUpdate(currentPlayer.name, currentSet, category, subcategory, newValue);
+        onStatUpdate(playerName, currentSet, category, subcategory, newValue);
     };
 
     const handleSetScoreChange = (field, value) => {
@@ -145,17 +35,29 @@ function StatEntry({ players, numSets, stats, setScores, onStatUpdate, onSetScor
         );
     };
 
+    const getRoleLabel = (role) => {
+        const map = {
+            'passeur': 'Passeur',
+            'libero': 'Libéro',
+            'r4': 'R4',
+            'central': 'Central',
+            'pointu': 'Pointu'
+        };
+        return map[role] || role;
+    };
+
     return (
-        <div className="container">
-            <div className="stat-entry-container">
-                {/* Controls */}
-                <div className="card controls-card">
-                    <div className="controls-grid">
-                        <div className="control-group">
-                            <label>Set</label>
+        <div className="container-fluid">
+            <div className="stat-entry-container full-width">
+                {/* Top Controls: Set selection and Score */}
+                <div className="card controls-card mb-md">
+                    <div className="controls-header">
+                        <div className="set-selector">
+                            <label>Set en cours :</label>
                             <select
                                 value={currentSet}
                                 onChange={(e) => setCurrentSet(parseInt(e.target.value))}
+                                className="set-select"
                             >
                                 {Array.from({ length: numSets }, (_, i) => i + 1).map(set => (
                                     <option key={set} value={set}>Set {set}</option>
@@ -163,97 +65,264 @@ function StatEntry({ players, numSets, stats, setScores, onStatUpdate, onSetScor
                             </select>
                         </div>
 
-                        <div className="control-group">
-                            <label>Joueur</label>
-                            <select
-                                value={currentPlayerIndex}
-                                onChange={(e) => setCurrentPlayerIndex(parseInt(e.target.value))}
-                            >
-                                {players.map((player, index) => (
-                                    <option key={index} value={index}>
-                                        {player.name} ({player.role === 'r4' ? 'R4' : player.role === 'libero' ? 'Libéro' : player.role === 'passeur' ? 'Passeur' : player.role === 'central' ? 'Central' : 'Pointu'})
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="score-display-compact">
+                            <span className="score-label">Score :</span>
+                            <input
+                                type="number"
+                                min="0"
+                                value={setScores[currentSet]?.team || 0}
+                                onChange={(e) => handleSetScoreChange('team', e.target.value)}
+                                className="score-input"
+                            />
+                            <span className="score-divider">-</span>
+                            <input
+                                type="number"
+                                min="0"
+                                value={setScores[currentSet]?.opponent || 0}
+                                onChange={(e) => handleSetScoreChange('opponent', e.target.value)}
+                                className="score-input"
+                            />
                         </div>
-                    </div>
 
-                    {/* Set Score */}
-                    <div className="set-score-section">
-                        <h4>Score du Set {currentSet}</h4>
-                        <div className="score-inputs">
-                            <div className="score-input-group">
-                                <label>Notre équipe</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={setScores[currentSet]?.team || 0}
-                                    onChange={(e) => handleSetScoreChange('team', e.target.value)}
-                                />
-                            </div>
-                            <span className="score-separator">-</span>
-                            <div className="score-input-group">
-                                <label>Adversaire</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={setScores[currentSet]?.opponent || 0}
-                                    onChange={(e) => handleSetScoreChange('opponent', e.target.value)}
-                                />
-                            </div>
-                        </div>
+                        <button
+                            className="btn-accent btn-summary"
+                            onClick={onViewSummary}
+                        >
+                            Voir le résumé →
+                        </button>
                     </div>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="stats-grid">
-                    {Object.entries(categories).map(([categoryKey, category]) => (
-                        <div key={categoryKey} className="card stat-category">
-                            <h3>
-                                <span className="category-icon">{category.icon}</span>
-                                {category.label}
-                            </h3>
-                            <div className="stat-items">
-                                {category.items.map(item => {
-                                    const value = getCurrentValue(categoryKey, item.key);
-                                    return (
-                                        <div key={item.key} className="stat-item">
-                                            <div className="stat-label">{item.label}</div>
-                                            <div className="stat-controls">
-                                                <button
-                                                    className="btn-secondary btn-small"
-                                                    onClick={() => updateStat(categoryKey, item.key, -1)}
-                                                    disabled={value === 0}
-                                                >
-                                                    −
-                                                </button>
-                                                <span className="stat-value">{value}</span>
-                                                <button
-                                                    className="btn-secondary btn-small"
-                                                    onClick={() => updateStat(categoryKey, item.key, 1)}
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                {/* Global Stats Table */}
+                <div className="table-container">
+                    <table className="entry-table">
+                        <thead>
+                            <tr>
+                                <th className="sticky-col name-col">Joueur</th>
+                                <th className="sticky-col role-col">Rôle</th>
 
-                {/* Action Button */}
-                <div className="actions">
-                    <button
-                        className="btn-accent btn-large"
-                        onClick={onViewSummary}
-                    >
-                        Voir le résumé →
-                    </button>
+                                <th colSpan="4" className="category-header service">Service 🏐</th>
+                                <th colSpan="3" className="category-header attack">Attaque ⚡</th>
+                                <th colSpan="3" className="category-header pass">Passe 🤝</th>
+                                <th colSpan="3" className="category-header reception">Réception 🛡️</th>
+                                <th colSpan="3" className="category-header defense">Défense 🔰</th>
+                                <th className="category-header faults">Fautes ⚠️</th>
+                            </tr>
+                            <tr className="subheader-row">
+                                <th className="sticky-col name-col"></th>
+                                <th className="sticky-col role-col"></th>
+
+                                {/* Service */}
+                                <th title="Ace">Ace</th>
+                                <th title="Mis en difficulté">Diff.</th>
+                                <th title="Passé">Pass.</th>
+                                <th title="Raté">Raté</th>
+
+                                {/* Attaque */}
+                                <th title="Marqué">Marq.</th>
+                                <th title="Placé">Plac.</th>
+                                <th title="Raté">Raté</th>
+
+                                {/* Passe */}
+                                <th title="Bonne">Bon.</th>
+                                <th title="Moyen">Moy.</th>
+                                <th title="Mauvaise">Mauv.</th>
+
+                                {/* Réception */}
+                                <th title="Zone passeur">Pass.</th>
+                                <th title="3 mètres">3m</th>
+                                <th title="Mauvais">Mauv.</th>
+
+                                {/* Défense */}
+                                <th title="Bonne">Bon.</th>
+                                <th title="Moyen">Moy.</th>
+                                <th title="Mauvaise">Mauv.</th>
+
+                                {/* Fautes */}
+                                <th title="Faute directe">Dir.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {players.map((player) => {
+                                return (
+                                    <tr key={player.name}>
+                                        <td className="sticky-col name-col player-name">{player.name}</td>
+                                        <td className="sticky-col role-col player-role">{getRoleLabel(player.role)}</td>
+
+                                        {/* Service */}
+                                        <StatCell
+                                            player={player}
+                                            category="service" subcategory="ace"
+                                            active={isCategoryApplicable(player.role, 'service')}
+                                            value={getStatValue(player.name, 'service', 'ace')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="service" subcategory="difficult"
+                                            active={isCategoryApplicable(player.role, 'service')}
+                                            value={getStatValue(player.name, 'service', 'difficult')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="service" subcategory="passed"
+                                            active={isCategoryApplicable(player.role, 'service')}
+                                            value={getStatValue(player.name, 'service', 'passed')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="service" subcategory="missed"
+                                            active={isCategoryApplicable(player.role, 'service')}
+                                            value={getStatValue(player.name, 'service', 'missed')}
+                                            isNegative
+                                            onUpdate={updateStat}
+                                        />
+
+                                        {/* Attaque */}
+                                        <StatCell
+                                            player={player}
+                                            category="attack" subcategory="scored"
+                                            active={isCategoryApplicable(player.role, 'attack')}
+                                            value={getStatValue(player.name, 'attack', 'scored')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="attack" subcategory="placed"
+                                            active={isCategoryApplicable(player.role, 'attack')}
+                                            value={getStatValue(player.name, 'attack', 'placed')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="attack" subcategory="missed"
+                                            active={isCategoryApplicable(player.role, 'attack')}
+                                            value={getStatValue(player.name, 'attack', 'missed')}
+                                            isNegative
+                                            onUpdate={updateStat}
+                                        />
+
+                                        {/* Passe */}
+                                        <StatCell
+                                            player={player}
+                                            category="pass" subcategory="good"
+                                            active={isCategoryApplicable(player.role, 'pass')}
+                                            value={getStatValue(player.name, 'pass', 'good')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="pass" subcategory="medium"
+                                            active={isCategoryApplicable(player.role, 'pass')}
+                                            value={getStatValue(player.name, 'pass', 'medium')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="pass" subcategory="bad"
+                                            active={isCategoryApplicable(player.role, 'pass')}
+                                            value={getStatValue(player.name, 'pass', 'bad')}
+                                            isNegative
+                                            onUpdate={updateStat}
+                                        />
+
+                                        {/* Réception */}
+                                        <StatCell
+                                            player={player}
+                                            category="reception" subcategory="setter"
+                                            active={isCategoryApplicable(player.role, 'reception')}
+                                            value={getStatValue(player.name, 'reception', 'setter')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="reception" subcategory="threeMeter"
+                                            active={isCategoryApplicable(player.role, 'reception')}
+                                            value={getStatValue(player.name, 'reception', 'threeMeter')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="reception" subcategory="bad"
+                                            active={isCategoryApplicable(player.role, 'reception')}
+                                            value={getStatValue(player.name, 'reception', 'bad')}
+                                            isNegative
+                                            onUpdate={updateStat}
+                                        />
+
+                                        {/* Défense */}
+                                        <StatCell
+                                            player={player}
+                                            category="defense" subcategory="good"
+                                            active={isCategoryApplicable(player.role, 'defense')}
+                                            value={getStatValue(player.name, 'defense', 'good')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="defense" subcategory="medium"
+                                            active={isCategoryApplicable(player.role, 'defense')}
+                                            value={getStatValue(player.name, 'defense', 'medium')}
+                                            onUpdate={updateStat}
+                                        />
+                                        <StatCell
+                                            player={player}
+                                            category="defense" subcategory="bad"
+                                            active={isCategoryApplicable(player.role, 'defense')}
+                                            value={getStatValue(player.name, 'defense', 'bad')}
+                                            isNegative
+                                            onUpdate={updateStat}
+                                        />
+
+                                        {/* Fautes */}
+                                        <StatCell
+                                            player={player}
+                                            category="faults" subcategory="direct"
+                                            active={true}
+                                            value={getStatValue(player.name, 'faults', 'direct')}
+                                            isNegative
+                                            onUpdate={updateStat}
+                                        />
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+    );
+}
+
+// Component for a single stat cell
+function StatCell({ player, category, subcategory, active, value, isNegative, onUpdate }) {
+    if (!active) {
+        return <td className="stat-cell disabled"></td>;
+    }
+
+    return (
+        <td className={`stat-cell ${isNegative ? 'negative-stat' : ''}`}>
+            <div className="stat-control-wrapper">
+                <div className="stat-value-display">{value || ''}</div>
+                <div className="stat-buttons">
+                    <button
+                        className="btn-mini btn-minus"
+                        onClick={() => onUpdate(player.name, category, subcategory, -1)}
+                        disabled={!value}
+                    >
+                        -
+                    </button>
+                    <button
+                        className="btn-mini btn-plus"
+                        onClick={() => onUpdate(player.name, category, subcategory, 1)}
+                    >
+                        +
+                    </button>
+                </div>
+            </div>
+        </td>
     );
 }
 
