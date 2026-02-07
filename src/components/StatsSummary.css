@@ -1,0 +1,164 @@
+.summary-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.summary-header {
+    margin-bottom: var(--spacing-xl);
+}
+
+.summary-header h2 {
+    margin-bottom: var(--spacing-md);
+}
+
+.match-info {
+    display: flex;
+    gap: var(--spacing-xl);
+    color: var(--color-text-secondary);
+}
+
+.match-info p {
+    margin: 0;
+}
+
+.scores-section {
+    margin-bottom: var(--spacing-2xl);
+}
+
+.scores-section h3 {
+    margin-bottom: var(--spacing-lg);
+    font-size: var(--font-size-xl);
+}
+
+.scores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.score-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-md);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-md);
+    gap: var(--spacing-sm);
+}
+
+.set-label {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.score-display {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+
+.sets-section,
+.summary-section {
+    margin-bottom: var(--spacing-2xl);
+}
+
+.sets-section h3,
+.summary-section h3 {
+    margin-bottom: var(--spacing-lg);
+    font-size: var(--font-size-xl);
+}
+
+.set-card {
+    margin-bottom: var(--spacing-lg);
+}
+
+.set-card h4 {
+    margin-bottom: var(--spacing-md);
+    color: var(--color-accent);
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.stats-table th {
+    background-color: var(--color-bg);
+    padding: var(--spacing-sm);
+    text-align: center;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.stats-table td {
+    padding: var(--spacing-sm);
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.stats-table tbody tr:hover {
+    background-color: var(--color-surface-hover);
+}
+
+.stats-table .player-name {
+    font-weight: 600;
+    text-align: left;
+    color: var(--color-text);
+}
+
+.stats-table .player-role {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+.stats-table .faults-cell {
+    background-color: rgba(255, 107, 107, 0.1);
+    font-weight: 600;
+    color: var(--color-error);
+}
+
+
+.stats-table .percentage {
+    color: var(--color-accent);
+    font-weight: 600;
+}
+
+.summary-table th {
+    font-size: var(--font-size-sm);
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+    .match-info {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .stats-table {
+        font-size: 0.75rem;
+    }
+
+    .stats-table th,
+    .stats-table td {
+        padding: var(--spacing-xs);
+    }
+
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
